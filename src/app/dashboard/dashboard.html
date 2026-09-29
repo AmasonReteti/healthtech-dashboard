@@ -9,7 +9,7 @@
       <path stroke-linecap="round" stroke-linejoin="round"
             d="M0,25 h10 h15 l5,-10 l5,20 l5,-10 h15 h15 l5,-10 l5,20 l5,-10 h15 h10" />
     </svg>
-      </div>
+  </div>
 
   <div class="flex items-center justify-between mb-6">
     <h2 class="text-lg font-semibold text-gray-700">Products</h2>
@@ -68,7 +68,7 @@
           </div>
           <div class="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
             <span class="text-sm font-medium" [ngClass]="getStockColor(product)">
-              Stock: {{ stockLevels()[product.id] ?? '...' }}
+              Stock: {{ product.currentStock }}
             </span>
             <span class="text-xs text-gray-400">Reorder at: {{ product.reorderLevel }}</span>
           </div>

@@ -1,3 +1,4 @@
+import { environment } from '../../environments/environment';
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -15,7 +16,7 @@ export interface ReconciliationResult {
 })
 export class ReconciliationService {
 
-  private apiUrl = 'http://localhost:8080/api/reconciliation';
+  private apiUrl = environment.apiUrl + '/api/reconciliation';
 
   constructor(private http: HttpClient) {}
 

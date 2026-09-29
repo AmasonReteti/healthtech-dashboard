@@ -1,6 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { ProductService, Product } from '../services/product.service';
 import { CommonModule } from '@angular/common';
+import { GraphqlService, ProductWithStock } from '../services/graphql.service';
 import { toFriendlyMessage } from '../utils/http-error.util';
 
 @Component({
@@ -11,29 +11,20 @@ import { toFriendlyMessage } from '../utils/http-error.util';
 })
 export class Dashboard implements OnInit {
 
-  products = signal<Product[]>([]);
+  // ONE list now holds everything - products AND their stock arrive 
+  // together, in a single request, instead of being fetched and 
+  // merged separately like before
+  products = signal<ProductWithStock[]>([]);
   loading = signal<boolean>(true);
   errorMessage = signal<string>('');
-  stockLevels = signal<{ [productId: number]: number }>({});
 
-  constructor(private productService: ProductService) {}
+  constructor(private graphqlService: GraphqlService) {}
 
   ngOnInit(): void {
-    this.productService.getAllProducts().subscribe({
+    this.graphqlService.getProductsWithStock().subscribe({
       next: (data) => {
         this.products.set(data);
         this.loading.set(false);
-
-        data.forEach((product) => {
-          this.productService.getCurrentStock(product.id).subscribe({
-            next: (stock) => {
-              this.stockLevels.update((current) => ({
-                ...current,
-                [product.id]: stock
-              }));
-            }
-          });
-        });
       },
       error: (err) => {
         this.loading.set(false);
@@ -42,22 +33,13 @@ export class Dashboard implements OnInit {
     });
   }
 
-  // Compares real current stock against that product's own reorder 
-  // level - "at or below" counts as critical (red), within 50% 
-  // above it counts as getting close (yellow), otherwise healthy
-  getStockColor(product: Product): string {
-    const stock = this.stockLevels()[product.id];
-    if (stock === undefined) return 'text-gray-700';
-
-    if (stock <= product.reorderLevel) return 'text-red-600';
-    if (stock <= product.reorderLevel * 1.5) return 'text-yellow-600';
+  getStockColor(product: ProductWithStock): string {
+    if (product.currentStock <= product.reorderLevel) return 'text-red-600';
+    if (product.currentStock <= product.reorderLevel * 1.5) return 'text-yellow-600';
     return 'text-green-600';
   }
 
-  // Only shows a warning badge when stock has actually reached the 
-  // reorder point - this is the real "alert," not just colored text
-  isLowStock(product: Product): boolean {
-    const stock = this.stockLevels()[product.id];
-    return stock !== undefined && stock <= product.reorderLevel;
+  isLowStock(product: ProductWithStock): boolean {
+    return product.currentStock <= product.reorderLevel;
   }
 }

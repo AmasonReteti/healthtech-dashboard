@@ -1,3 +1,4 @@
+import { environment } from '../../environments/environment';
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -13,7 +14,7 @@ export interface AnomalyResult {
 })
 export class AnomalyService {
 
-  private apiUrl = 'http://localhost:8080/api/anomalies';
+  private apiUrl = environment.apiUrl + '/api/anomalies';
 
   constructor(private http: HttpClient) {}
 

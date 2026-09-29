@@ -1,3 +1,4 @@
+import { environment } from '../../environments/environment';
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -22,7 +23,7 @@ export interface CreateBatchRequest {
 })
 export class BatchService {
 
-  private apiUrl = 'http://localhost:8080/api/stock-batches';
+  private apiUrl = environment.apiUrl + '/api/stock-batches';
 
   constructor(private http: HttpClient) {}
 
