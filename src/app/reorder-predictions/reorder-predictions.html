@@ -1,0 +1,59 @@
+<div class="min-h-screen bg-gray-50 p-6">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Reorder Predictions</h1>
+      <p class="text-gray-500 text-sm">Estimated stockout dates based on real usage history</p>
+    </div>
+    <div class="bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-sm font-medium">
+      {{ predictions().length }} Products
+    </div>
+  </div>
+
+  <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 text-sm text-blue-800">
+    These are simple, explainable estimates based on each product's own movement history - not
+    a trained prediction model. A product needs enough recorded usage before a meaningful estimate
+    is possible, and the estimate is only as reliable as the real-world consistency of that usage.
+  </div>
+
+  @if (loading()) {
+    <p class="text-gray-500">Calculating predictions...</p>
+  }
+
+  @if (errorMessage()) {
+    <p class="text-red-600 font-bold">{{ errorMessage() }}</p>
+  }
+
+  @if (!loading() && predictions().length > 0) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (prediction of predictions(); track prediction.productId) {
+        <div class="bg-white rounded-xl shadow p-5 border border-gray-100">
+          <div class="flex justify-between items-start mb-2">
+            <h2 class="font-semibold text-gray-800">{{ prediction.productName }}</h2>
+            @if (prediction.dataSufficient) {
+              <span class="text-xs px-2 py-1 rounded-full font-medium" [ngClass]="getUrgencyColor(prediction)">
+                {{ prediction.daysOfStockRemaining }} days left
+              </span>
+            } @else {
+              <span class="bg-gray-100 text-gray-500 text-xs px-2 py-1 rounded-full">
+                Insufficient data
+              </span>
+            }
+          </div>
+
+          <p class="text-sm text-gray-500 mb-3">Current stock: {{ prediction.currentStock }}</p>
+
+          @if (prediction.dataSufficient) {
+            <div class="space-y-1 text-sm text-gray-600 mb-3">
+              <p>Average usage: {{ prediction.averageDailyUsage }} / day</p>
+              <p>Predicted stockout: {{ prediction.predictedStockoutDate }}</p>
+              <p class="font-medium text-teal-700">Suggested reorder: {{ prediction.suggestedReorderQuantity }} units</p>
+            </div>
+          }
+
+          <p class="text-xs text-gray-400 italic">{{ prediction.note }}</p>
+        </div>
+      }
+    </div>
+  }
+</div>
