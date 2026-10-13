@@ -13,6 +13,7 @@ import { Batches } from './batches/batches';
 import { Anomalies } from './anomalies/anomalies';
 import { Reconciliation } from './reconciliation/reconciliation';
 import { ReorderPredictions } from './reorder-predictions/reorder-predictions';
+import { PurchaseOrders } from './purchase-orders/purchase-orders';
 
 export const routes: Routes = [
   { path: 'login', component: Login },
@@ -31,7 +32,8 @@ export const routes: Routes = [
       { path: 'batches', component: Batches },
       { path: 'anomalies', component: Anomalies },
       { path: 'reconciliation', component: Reconciliation },
-      { path: 'reorder-predictions', component: ReorderPredictions }
+      { path: 'reorder-predictions', component: ReorderPredictions },
+      { path: 'purchase-orders', component: PurchaseOrders }
     ]
   },
   { path: '', redirectTo: '/login', pathMatch: 'full' }

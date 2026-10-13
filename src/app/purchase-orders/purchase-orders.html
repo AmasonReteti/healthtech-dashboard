@@ -1,0 +1,59 @@
+<div class="min-h-screen bg-gray-50 p-6">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Purchase Orders</h1>
+      <p class="text-gray-500 text-sm">Auto-generated drafts for products at or below their reorder level</p>
+    </div>
+    <button (click)="generate()" [disabled]="generating()"
+            class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 disabled:opacity-50">
+      {{ generating() ? 'Checking...' : 'Check Stock & Generate Drafts' }}
+    </button>
+  </div>
+
+  @if (successMessage()) {
+    <p class="text-green-600 text-sm mb-4 bg-green-50 p-3 rounded-lg">{{ successMessage() }}</p>
+  }
+
+  @if (errorMessage()) {
+    <p class="text-red-600 text-sm mb-4 bg-red-50 p-3 rounded-lg">{{ errorMessage() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="text-gray-500">Loading purchase orders...</p>
+  }
+
+  @if (!loading() && orders().length === 0) {
+    <div class="bg-white rounded-xl shadow p-8 text-center border border-gray-100">
+      <p class="text-gray-500">No purchase orders yet. Tap "Check Stock & Generate Drafts" to scan for low stock.</p>
+    </div>
+  }
+
+  @if (!loading() && orders().length > 0) {
+    <div class="space-y-3">
+      @for (order of orders(); track order.id) {
+        <div class="bg-white rounded-xl shadow p-5 border border-gray-100 flex items-center justify-between">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              @if (order.status === 'DRAFT') {
+                <span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full font-medium">DRAFT</span>
+              } @else {
+                <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">SUBMITTED</span>
+              }
+              <h2 class="font-semibold text-gray-800">{{ order.product.name }}</h2>
+            </div>
+            <p class="text-sm text-gray-500">Quantity: {{ order.quantity }} · Supplier: {{ order.supplier.name }}</p>
+            <p class="text-sm text-gray-500">{{ order.reason }}</p>
+          </div>
+
+          @if (order.status === 'DRAFT') {
+            <button (click)="submit(order.id)" [disabled]="processingId() === order.id"
+                    class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 disabled:opacity-50">
+              Submit to Supplier
+            </button>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>
