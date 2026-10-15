@@ -7,6 +7,7 @@ import { DepartmentService, Department } from '../services/department.service';
 import { BatchService, Batch } from '../services/batch.service';
 import { StockMovementService } from '../services/stock-movement.service';
 import { toFriendlyMessage } from '../utils/http-error.util';
+import { Html5Qrcode } from 'html5-qrcode';
 
 @Component({
   selector: 'app-stock-movement',
@@ -33,9 +34,10 @@ export class StockMovement implements OnInit {
   errorMessage = signal<string>('');
   submitting = signal<boolean>(false);
 
-  // computed() automatically recalculates whenever selectedProductId 
-  // or allBatches changes - this is what filters the batch dropdown 
-  // to only show batches belonging to the currently selected product
+  // Controls whether the camera view is currently showing
+  scanning = signal<boolean>(false);
+  private scanner: Html5Qrcode | null = null;
+
   batchesForSelectedProduct = computed(() => {
     const productId = this.selectedProductId;
     if (!productId) return [];
@@ -66,6 +68,48 @@ export class StockMovement implements OnInit {
     this.userService.getCurrentUser().subscribe({
       next: (user) => this.currentUserId = user.id
     });
+  }
+
+  // Starts the device camera and watches for a QR code. "qr-reader" 
+  // refers to a specific <div> id in the template that html5-qrcode 
+  // takes over to display the live camera feed
+  startScan(): void {
+    this.errorMessage.set('');
+    this.scanning.set(true);
+    this.scanner = new Html5Qrcode('qr-reader');
+
+    this.scanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: 200 },
+      (decodedText) => {
+        // Our QR codes encode "PRODUCT:<id>" - this extracts just 
+        // the numeric part and matches it against our real product list
+        const match = decodedText.match(/^PRODUCT:(\d+)$/);
+        if (match) {
+          const productId = Number(match[1]);
+          const found = this.products().find(p => p.id === productId);
+          if (found) {
+            this.selectedProductId = productId;
+            this.stopScan();
+          }
+        }
+      },
+      () => {
+        // Called continuously while no code is detected yet - 
+        // intentionally empty, this is normal and expected while 
+        // the camera is just looking
+      }
+    ).catch(() => {
+      this.errorMessage.set('Could not access the camera. Check camera permissions and try again.');
+      this.scanning.set(false);
+    });
+  }
+
+  stopScan(): void {
+    if (this.scanner) {
+      this.scanner.stop().then(() => this.scanner?.clear());
+    }
+    this.scanning.set(false);
   }
 
   onSubmit(): void {
@@ -101,9 +145,6 @@ export class StockMovement implements OnInit {
       payload.department = { id: this.selectedDepartmentId };
     }
 
-    // Batch is optional and only relevant for IN - not every delivery 
-    // needs to reference a pre-existing batch (e.g. equipment doesn't 
-    // track batches at all)
     if (this.selectedType === 'IN' && this.selectedBatchId) {
       payload.batch = { id: this.selectedBatchId };
     }
