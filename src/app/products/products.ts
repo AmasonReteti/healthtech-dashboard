@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ProductService, Product } from '../services/product.service';
 import { SupplierService, Supplier } from '../services/supplier.service';
 import { toFriendlyMessage } from '../utils/http-error.util';
+import * as QRCode from 'qrcode';
 
 @Component({
   selector: 'app-products',
@@ -21,7 +22,10 @@ export class Products implements OnInit {
   submitting = signal<boolean>(false);
   showForm = signal<boolean>(false);
 
-  // Form field values
+  // Maps product id -> a data URL image of its QR code, generated 
+  // once each product list loads
+  qrCodes = signal<{ [productId: number]: string }>({});
+
   name: string = '';
   sku: string = '';
   category: string = 'MEDICATION';
@@ -38,8 +42,6 @@ export class Products implements OnInit {
   ngOnInit(): void {
     this.loadProducts();
 
-    // We need the supplier list too, so the form's dropdown has 
-    // real options to pick from
     this.supplierService.getAllSuppliers().subscribe({
       next: (data) => this.suppliers.set(data)
     });
@@ -51,11 +53,23 @@ export class Products implements OnInit {
       next: (data) => {
         this.products.set(data);
         this.loading.set(false);
+        this.generateQrCodes(data);
       },
       error: (err) => {
         this.loading.set(false);
         this.errorMessage.set(toFriendlyMessage(err));
       }
+    });
+  }
+
+  // Encodes just the product's id as plain text inside the QR code - 
+  // simple and unambiguous, since scanning just needs to recover 
+  // this one number to look the product up again
+  private generateQrCodes(products: Product[]): void {
+    products.forEach((product) => {
+      QRCode.toDataURL(`PRODUCT:${product.id}`, { width: 150 }).then((dataUrl) => {
+        this.qrCodes.update((current) => ({ ...current, [product.id]: dataUrl }));
+      });
     });
   }
 
@@ -83,8 +97,8 @@ export class Products implements OnInit {
         this.submitting.set(false);
         this.successMessage.set(`${newProduct.name} added successfully.`);
         this.products.update((current) => [...current, newProduct]);
+        this.generateQrCodes([newProduct]);
 
-        // Reset the form
         this.name = '';
         this.sku = '';
         this.category = 'MEDICATION';
